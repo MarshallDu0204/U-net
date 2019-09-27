@@ -1,4 +1,7 @@
 import numpy as np
+from tkinter import *
+import tkinter.font as tkFont
+import tkinter.filedialog
 
 match = 0
 gap = 0
@@ -7,10 +10,52 @@ mismatch = 0
 stringA = ""
 stringB = ""
 
+path = ""
+
+def setPath(inPath):
+    global path
+    path = inPath
 
 def readFile(path):
-    with open(path,"r") as f:
-        a = f.readlines()
+    match = 0
+    gap = 0
+    mismatch = 0
+
+    seqA = ""
+    seqB = ""
+
+    try:
+        with open(path,"r") as f:
+            file = f.readlines()
+            data = file[0:3]
+            seqA = file[4]
+            seqB = file[5]
+            newData = []
+            
+            for i in range(len(data)):
+                d = data[i].split(":")
+                d = d[1]
+                d = d.strip()
+                newData.append(d)
+
+            match = int(newData[0])
+            gap = int(newData[1])
+            mismatch = int(newData[2])
+
+            seqA = seqA.split(":")
+            seqA = seqA[1]
+            seqA = seqA.strip()
+            seqA = str(seqA)
+            seqB = seqB.split(":")
+            seqB = seqB[1]
+            seqB = seqB.strip()
+            seqB = str(seqB)
+    except:
+        print("error")
+    
+
+    return match,gap,mismatch,seqA,seqB
+
 
 def setValue(inMatch,inGap,inMismatch,inStringA,inStringB):
     global match,gap,mismatch
@@ -39,7 +84,6 @@ def showMatrix(matrix):
 
 
 def initGlobalMatrix(matrix):
-
     global gap
 
     for i in range(1,len(matrix)):
@@ -163,19 +207,21 @@ def globalAlignment(matrix):
 
 
 def exeGlobalAlignment():
-    #readFile()
-    setValue(1,-1,-1,"agta","ata")
+    global path
+    match,gap,mismatch,seqA,seqB = readFile(path)
+    setValue(match,gap,mismatch,seqA,seqB)
     global stringA,stringB
     matrix = initMatrix(stringA,stringB) 
     matrix = initGlobalMatrix(matrix)
 
 
     resultA,resultB,resultShow = globalAlignment(matrix)
-    print(resultA)
-    print(resultB)
-    print(resultShow)
 
-#exeGlobalAlignment()
+    answer = toString(resultA,resultB,resultShow)
+
+    var.set(answer)
+
+    
 
 def localAlignment(matrix):
     
@@ -223,9 +269,6 @@ def localAlignment(matrix):
 
             j+=1
         i+=1
-
-    print(matrix)
-    print(resultAlignment)
 
     maxVlue = 0
     indexX = 0
@@ -320,8 +363,9 @@ def localAlignment(matrix):
 
 
 def exeLocalAlignment():
-    #readFile()
-    setValue(3,-2,-3,"tgttacgg","ggttgacta")
+    global path
+    match,gap,mismatch,seqA,seqB = readFile(path)
+    setValue(match,gap,mismatch,seqA,seqB)
     global stringA,stringB
     matrix = initMatrix(stringA,stringB) 
     matrix = initLocalMatrix(matrix)
@@ -329,3 +373,73 @@ def exeLocalAlignment():
     
     resultA,resultB,resultShow,tempA,tempB = localAlignment(matrix)
 
+    answer = toString(resultA,resultB,resultShow,wholeStringA = tempA,wholeStringB = tempB)
+
+    var.set(answer)
+
+def toString(resultA,resultB,resultShow,wholeStringA = "",wholeStringB = ""):
+    global match,gap,mismatch
+
+    global stringA,stringB
+
+    answer = ""
+    if wholeStringA != "" and wholeStringB != "":
+        answer = ""
+        answer = "localAlignment"+"\n"
+        answer = answer+"match: "+str(match)+"\n"
+        answer = answer+"gap: "+str(gap)+"\n"
+        answer = answer+"mismatch: "+str(mismatch)+"\n"
+        answer = answer+"originSeqA: "+stringA+"\n"
+        answer = answer+"originSeqB: "+stringB+"\n"
+
+        answer = answer+"--------------\n"
+
+        answer = answer+"wholeStringA: "+wholeStringA+"\n"
+        answer = answer+"wholeStringB: "+wholeStringB+"\n"
+        answer = answer+"alignSeqA: "+resultA+"\n"
+        answer = answer+"alignSeqB: "+resultB+"\n"
+        answer = answer+"spec:      "+resultShow+"\n"
+
+    else:
+        
+        answer = ""
+        answer = "globalAlignment"+"\n"
+        answer = answer+"match: "+str(match)+"\n"
+        answer = answer+"gap: "+str(gap)+"\n"
+        answer = answer+"mismatch: "+str(mismatch)+"\n"
+        answer = answer+"originSeqA: "+stringA+"\n"
+        answer = answer+"originSeqB: "+stringB+"\n"
+
+        answer = answer+"--------------\n"
+
+        answer = answer+"alignSeqA: "+resultA+"\n"
+        answer = answer+"alignSeqB: "+resultB+"\n"
+        answer = answer+"spec:      "+resultShow+"\n"
+
+    return answer
+
+def filePicker():
+    filename = tkinter.filedialog.askopenfilename()
+    if filename != '':
+        lb.config(text = "The File you choose is ："+filename)
+        setPath(filename)
+    else:
+        lb.config(text = "No file select")
+
+root = Tk()
+root.title("Sequence Alignment")
+root.geometry('800x600')
+var = StringVar()
+btn = Button(root,text="Choose your file",command=filePicker)
+btn.pack()
+lb = Label(root,text = '')
+lb.pack()
+com = Button(root,text = 'localAlignment', command = exeLocalAlignment) 
+com.pack() 
+com = Button(root,text = 'globalAlignment', command = exeGlobalAlignment) 
+com.pack()
+ft = tkFont.Font(family='Fixdsys', size=20, weight=tkFont.BOLD)
+label = Label(root,textvariable = var,width = 300,height = 200,bg='white',justify = 'left',font=ft)
+label.pack()
+
+root.mainloop()
