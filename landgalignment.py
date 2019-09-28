@@ -7,6 +7,8 @@ match = 0
 gap = 0
 mismatch = 0
 
+option = ""
+
 stringA = ""
 stringB = ""
 
@@ -27,39 +29,39 @@ def readFile(path):
     try:
         with open(path,"r") as f:
             file = f.readlines()
-            data = file[0:3]
-            seqA = file[4]
-            seqB = file[5]
-            newData = []
+
+            option = file[0]
+            option = option.strip()
+
+
+            data = file[1]
+            seqA = file[2]
+            seqB = file[3]
             
-            for i in range(len(data)):
-                d = data[i].split(":")
-                d = d[1]
-                d = d.strip()
-                newData.append(d)
+            data = data.split(" ")
 
-            match = int(newData[0])
-            gap = int(newData[1])
-            mismatch = int(newData[2])
 
-            seqA = seqA.split(":")
-            seqA = seqA[1]
+            match = int(data[0])
+            gap = int(data[1])
+            mismatch = int(data[2])
+
             seqA = seqA.strip()
             seqA = str(seqA)
-            seqB = seqB.split(":")
-            seqB = seqB[1]
             seqB = seqB.strip()
             seqB = str(seqB)
     except:
         print("error")
     
 
-    return match,gap,mismatch,seqA,seqB
+    return match,gap,mismatch,seqA,seqB,option
 
 
-def setValue(inMatch,inGap,inMismatch,inStringA,inStringB):
+def setValue(inMatch,inGap,inMismatch,inStringA,inStringB,inOption):
     global match,gap,mismatch
     global stringA,stringB
+    global option
+
+    option = inOption
 
     match = inMatch
     gap = inGap
@@ -204,23 +206,6 @@ def globalAlignment(matrix):
         x-=1
 
     return resultA,resultB,resultShow
-
-
-def exeGlobalAlignment():
-    global path
-    match,gap,mismatch,seqA,seqB = readFile(path)
-    setValue(match,gap,mismatch,seqA,seqB)
-    global stringA,stringB
-    matrix = initMatrix(stringA,stringB) 
-    matrix = initGlobalMatrix(matrix)
-
-
-    resultA,resultB,resultShow = globalAlignment(matrix)
-
-    answer = toString(resultA,resultB,resultShow)
-
-    var.set(answer)
-
     
 
 def localAlignment(matrix):
@@ -362,21 +347,6 @@ def localAlignment(matrix):
         
 
 
-def exeLocalAlignment():
-    global path
-    match,gap,mismatch,seqA,seqB = readFile(path)
-    setValue(match,gap,mismatch,seqA,seqB)
-    global stringA,stringB
-    matrix = initMatrix(stringA,stringB) 
-    matrix = initLocalMatrix(matrix)
-    localAlignment(matrix)
-    
-    resultA,resultB,resultShow,tempA,tempB = localAlignment(matrix)
-
-    answer = toString(resultA,resultB,resultShow,wholeStringA = tempA,wholeStringB = tempB)
-
-    var.set(answer)
-
 def toString(resultA,resultB,resultShow,wholeStringA = "",wholeStringB = ""):
     global match,gap,mismatch
 
@@ -418,6 +388,7 @@ def toString(resultA,resultB,resultShow,wholeStringA = "",wholeStringB = ""):
 
     return answer
 
+
 def filePicker():
     filename = tkinter.filedialog.askopenfilename()
     if filename != '':
@@ -425,6 +396,28 @@ def filePicker():
         setPath(filename)
     else:
         lb.config(text = "No file select")
+
+
+def startAlignment():
+    global path
+    match,gap,mismatch,seqA,seqB,option = readFile(path)
+    setValue(match,gap,mismatch,seqA,seqB,option)
+    global stringA,stringB
+    matrix = initMatrix(stringA,stringB) 
+    
+    if option == "l":
+        matrix = initLocalMatrix(matrix)
+        resultA,resultB,resultShow,tempA,tempB = localAlignment(matrix)
+        answer = toString(resultA,resultB,resultShow,wholeStringA = tempA,wholeStringB = tempB)
+        var.set(answer)
+
+    else:
+        matrix = initGlobalMatrix(matrix)
+        globalAlignment(matrix)
+        resultA,resultB,resultShow = globalAlignment(matrix)
+        answer = toString(resultA,resultB,resultShow)
+        var.set(answer)
+
 
 root = Tk()
 root.title("Sequence Alignment")
@@ -434,12 +427,12 @@ btn = Button(root,text="Choose your file",command=filePicker)
 btn.pack()
 lb = Label(root,text = '')
 lb.pack()
-com = Button(root,text = 'localAlignment', command = exeLocalAlignment) 
+com = Button(root,text = 'startAlignment', command = startAlignment) 
 com.pack() 
-com = Button(root,text = 'globalAlignment', command = exeGlobalAlignment) 
-com.pack()
 ft = tkFont.Font(family='Fixdsys', size=20, weight=tkFont.BOLD)
 label = Label(root,textvariable = var,width = 300,height = 200,bg='white',justify = 'left',font=ft)
 label.pack()
 
 root.mainloop()
+
+
