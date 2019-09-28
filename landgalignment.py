@@ -14,6 +14,8 @@ stringB = ""
 
 path = ""
 
+count = 1
+
 def setPath(inPath):
     global path
     path = inPath
@@ -113,6 +115,7 @@ def globalAlignment(matrix):
     global stringA,stringB
     global match,gap,mismatch
     resultAlignment = {}
+    alignmentTable = []
     seqA = stringA
     seqB = stringB
 
@@ -129,23 +132,32 @@ def globalAlignment(matrix):
             x = j-1
 
             if seqA[x] == seqB[y]:
+                
                 matrix[i][j] = max(up+gap,left+gap,diag+match)
                 if matrix[i][j] == up+gap:
                     resultAlignment[i,j] = "up"
-                elif matrix[i][j] == left+gap:
+                    alignmentTable.append([i,j,"up"])
+                if matrix[i][j] == left+gap:
                     resultAlignment[i,j] = "left"
-                else:
+                    alignmentTable.append([i,j,"left"])       
+                if matrix[i][j] == diag+match:
                     resultAlignment[i,j] = "match"
+                    alignmentTable.append([i,j,"diag"])
+                
 
             else:
+            
                 matrix[i][j] = max(up+gap,left+gap,diag+mismatch)
                 if matrix[i][j] == up+gap:
                     resultAlignment[i,j] = "up"
-                elif matrix[i][j] == left+gap:
+                    alignmentTable.append([i,j,"up"])
+                if matrix[i][j] == left+gap:
                     resultAlignment[i,j] = "left"
-                else:
+                    alignmentTable.append([i,j,"left"])
+                if matrix[i][j] == diag+mismatch:
                     resultAlignment[i,j] = "mismatch"
-
+                    alignmentTable.append([i,j,"diag"])
+            
             j+=1
         i+=1
 
@@ -204,15 +216,23 @@ def globalAlignment(matrix):
             i+=1
         
         x-=1
+    pathCont = 0
+    i = len(matrix)-1
+    j = len(matrix[0])-1
+    pathCont = alignmentCont([i,j],alignmentTable)
+    optimal = matrix[len(matrix)-1][len(matrix[0])-1]
+    print(matrix)
+    return resultA,resultB,resultShow,optimal,pathCont
 
-    return resultA,resultB,resultShow
-    
+
+
 
 def localAlignment(matrix):
     
     global stringA,stringB
     global match,gap,mismatch
     resultAlignment = {}
+    alignmentTable = []
     seqA = stringA
     seqB = stringB
 
@@ -230,27 +250,33 @@ def localAlignment(matrix):
 
             if seqA[x] == seqB[y]:
                 matrix[i][j] = max(up+gap,left+gap,diag+match,0)
-
+       
+                if matrix[i][j] == up+gap:
+                    resultAlignment[i,j] = "up"
+                    alignmentTable.append([i,j,"up"])
+                if matrix[i][j] == left+gap:
+                    resultAlignment[i,j] = "left"
+                    alignmentTable.append([i,j,"left"])
+                if matrix[i][j] == diag+match:
+                    resultAlignment[i,j] = "match"
+                    alignmentTable.append([i,j,"diag"])
                 if matrix[i][j] == 0:
                     resultAlignment[i,j] = 0
-                elif matrix[i][j] == up+gap:
-                    resultAlignment[i,j] = "up"
-                elif matrix[i][j] == left+gap:
-                    resultAlignment[i,j] = "left"
-                else:
-                    resultAlignment[i,j] = "match"
 
             else:
                 matrix[i][j] = max(up+gap,left+gap,diag+mismatch,0)
 
+                if matrix[i][j] == up+gap:
+                    resultAlignment[i,j] = "up"
+                    alignmentTable.append([i,j,"up"])
+                if matrix[i][j] == left+gap:
+                    resultAlignment[i,j] = "left"
+                    alignmentTable.append([i,j,"left"])
+                if matrix[i][j] == diag+mismatch:
+                    resultAlignment[i,j] = "mismatch"
+                    alignmentTable.append([i,j,"diag"])
                 if matrix[i][j] == 0:
                     resultAlignment[i,j] = 0
-                elif matrix[i][j] == up+gap:
-                    resultAlignment[i,j] = "up"
-                elif matrix[i][j] == left+gap:
-                    resultAlignment[i,j] = "left"
-                else:
-                    resultAlignment[i,j] = "mismatch"
 
             j+=1
         i+=1
@@ -343,11 +369,70 @@ def localAlignment(matrix):
             tempB = tempB+")"
         tempB = tempB+seqB[i]
 
-    return resultA,resultB,resultShow,tempA,tempB
+    pathCont = 0
+    i = indexX
+    j = indexY
+
+    optimal = matrix[i][j]
+    pathCont = alignmentCont([i,j],alignmentTable)
+
+    
+    return resultA,resultB,resultShow,tempA,tempB,optimal,pathCont
         
+def alignmentCont(start,alignmentTable):
+    path = []
+    i = start[0]
+    j = start[1]
+    temp = []
+    temp.append([i,j])
+    path.append(temp)
+    while checkFinish(alignmentTable,path):
+        for i in range(len(path)):
+            last = path[i][len(path[i])-1]
+            result = searchTable(alignmentTable,last[0],last[1])
+            if len(result)==1:
+                result = result[0]
+                if result == "left":
+                    path[i].append([last[0],last[1]-1])
+                elif result == "diag":
+                    path[i].append([last[0]-1,last[1]-1])
+                else:
+                    path[i].append([last[0]-1,last[1]])
+            elif len(result)==2:
+                if result[0] == "left":
+                    path[i].append([last[0],last[1]-1])
+                if result[0] == "diag":
+                    path[i].append([last[0]-1,last[1]-1])
+                if result[0] == "up":
+                    path[i].append([last[0]-1,last[1]])
+                temp = []
+                if result[1] == "left":
+                    temp.append([last[0],last[1]-1])
+                if result[1] == "diag":
+                    temp.append([last[0]-1,last[1]-1])
+                if result[1] == "up":
+                    temp.append(last[0]-1,last[1])
+                path.append(temp)
+
+    return len(path)  
+
+def checkFinish(alignmentTable,path):
+    for element in path:
+        last = element[len(element)-1]
+        result = searchTable(alignmentTable,last[0],last[1])
+        if len(result)>0:
+            return True
+    return False
 
 
-def toString(resultA,resultB,resultShow,wholeStringA = "",wholeStringB = ""):
+def searchTable(alignmentTable,i,j):
+    result = []
+    for element in alignmentTable:
+        if element[0] == i and element[1]==j:
+            result.append(element[2])
+    return result
+
+def toString(resultA,resultB,resultShow,optimal,pathCont,wholeStringA = "",wholeStringB = ""):
     global match,gap,mismatch
 
     global stringA,stringB
@@ -369,6 +454,8 @@ def toString(resultA,resultB,resultShow,wholeStringA = "",wholeStringB = ""):
         answer = answer+"alignSeqA: "+resultA+"\n"
         answer = answer+"alignSeqB: "+resultB+"\n"
         answer = answer+"spec:      "+resultShow+"\n"
+        answer = answer+"optimal score: "+str(optimal)+"\n"
+        answer = answer+"number of solution: "+str(pathCont)+"\n"
 
     else:
         
@@ -385,13 +472,15 @@ def toString(resultA,resultB,resultShow,wholeStringA = "",wholeStringB = ""):
         answer = answer+"alignSeqA: "+resultA+"\n"
         answer = answer+"alignSeqB: "+resultB+"\n"
         answer = answer+"spec:      "+resultShow+"\n"
+        answer = answer+"optimal score: "+str(optimal)+"\n"
+        answer = answer+"number of solution: "+str(pathCont)+"\n"
 
     return answer
 
 
 def filePicker():
     filename = tkinter.filedialog.askopenfilename()
-    if filename != '':
+    if filename != "":
         lb.config(text = "The File you choose is ："+filename)
         setPath(filename)
     else:
@@ -407,15 +496,14 @@ def startAlignment():
     
     if option == "l":
         matrix = initLocalMatrix(matrix)
-        resultA,resultB,resultShow,tempA,tempB = localAlignment(matrix)
-        answer = toString(resultA,resultB,resultShow,wholeStringA = tempA,wholeStringB = tempB)
+        resultA,resultB,resultShow,tempA,tempB,optimal,pathCont = localAlignment(matrix)
+        answer = toString(resultA,resultB,resultShow,optimal,pathCont,wholeStringA = tempA,wholeStringB = tempB)
         var.set(answer)
 
     else:
         matrix = initGlobalMatrix(matrix)
-        globalAlignment(matrix)
-        resultA,resultB,resultShow = globalAlignment(matrix)
-        answer = toString(resultA,resultB,resultShow)
+        resultA,resultB,resultShow,optimal,pathCont = globalAlignment(matrix)
+        answer = toString(resultA,resultB,resultShow,optimal,pathCont)
         var.set(answer)
 
 
