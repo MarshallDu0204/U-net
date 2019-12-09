@@ -28,7 +28,7 @@ class TransformLayer(Layer):
 
         self.kernel = self.add_weight(name='kernel', 
                                   shape=(total,1),
-                                  initializer='uniform',
+                                  initializer='he_normal',
                                   trainable=True)
 
         self.bias = self.add_weight(name='bias', 
@@ -62,36 +62,36 @@ def unet(pretrained_weights = None,input_size = (256,256,1),model_type = 0):
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
 
-    if model_type == 1:
-        conv1 = TransformLayer()(conv1)
-        conv1 = TransformLayer()(conv1)
-
     pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
     conv2 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool1)
-    conv2 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv2)
-
-    if model_type == 1:
-        conv2 = TransformLayer()(conv2)
-        conv2 = TransformLayer()(conv2)
+    conv2 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv2)  
 
     pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
     conv3 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool2)
-    conv3 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv3)
-
-    if model_type == 1:
-        conv3 = TransformLayer()(conv3)
-        conv3 = TransformLayer()(conv3)
+    conv3 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv3)   
 
     pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
     conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool3)
     conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv4)
     drop4 = Dropout(0.5)(conv4)
 
-    if model_type == 1:
-        drop4  = TransformLayer()(drop4)
-        drop4 =  TransformLayer()(drop4)
-
     pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
+
+    if model_type == 1:
+        x21 = Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(drop4))
+        x21 = concatenate([conv3,x21],axis = 3)
+        x21 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(x21)
+        x21 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(x21)
+
+        x12 = Conv2D(256, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(x21))
+        x12 = concatenate([conv2,x12],axis = 3)
+        x12 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(x12)
+        x12 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(x12)
+
+        x03 = Conv2D(128, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(x12))
+        x03 = concatenate([conv1,x03],axis = 3)
+        x03 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(x03)
+        x03 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(x03)   
 
     if model_type == 2:
         x21 = Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(drop4))
@@ -135,7 +135,7 @@ def unet(pretrained_weights = None,input_size = (256,256,1),model_type = 0):
 
     up7 = Conv2D(256, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv6))
 
-    if model_type!=2:
+    if model_type==0:
         merge7 = concatenate([conv3,up7], axis = 3)
     else:
         merge7 = concatenate([up7,x21],axis = 3)
@@ -145,7 +145,7 @@ def unet(pretrained_weights = None,input_size = (256,256,1),model_type = 0):
 
     up8 = Conv2D(128, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv7))
 
-    if model_type!=2:
+    if model_type==0:
         merge8 = concatenate([conv2,up8], axis = 3)
     else:
         merge8 = concatenate([up8,x12],axis = 3)
@@ -155,7 +155,7 @@ def unet(pretrained_weights = None,input_size = (256,256,1),model_type = 0):
 
     up9 = Conv2D(64, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv8))
 
-    if model_type!=2:
+    if model_type==0:
         merge9 = concatenate([conv1,up9], axis = 3)
     else:
         merge9 = concatenate([up9,x03],axis = 3)
