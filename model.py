@@ -76,7 +76,9 @@ def unet(pretrained_weights = None,input_size = (256,256,1),model_type = 0):
     drop4 = Dropout(0.5)(conv4)
 
     pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
-
+    
+    
+    
     if model_type == 1:
         x21 = Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(drop4))
         x21 = concatenate([conv3,x21],axis = 3)
@@ -135,9 +137,10 @@ def unet(pretrained_weights = None,input_size = (256,256,1),model_type = 0):
 
     up7 = Conv2D(256, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv6))
 
-    if model_type==0:
-        merge7 = concatenate([conv3,up7], axis = 3)
-    else:
+    
+    merge7 = concatenate([conv3,up7], axis = 3)
+
+    if model_type!=0:
         merge7 = concatenate([up7,x21],axis = 3)
 
     conv7 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge7)
@@ -145,9 +148,9 @@ def unet(pretrained_weights = None,input_size = (256,256,1),model_type = 0):
 
     up8 = Conv2D(128, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv7))
 
-    if model_type==0:
-        merge8 = concatenate([conv2,up8], axis = 3)
-    else:
+    merge8 = concatenate([conv2,up8], axis = 3)
+
+    if model_type!=0:
         merge8 = concatenate([up8,x12],axis = 3)
 
     conv8 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge8)
@@ -155,9 +158,9 @@ def unet(pretrained_weights = None,input_size = (256,256,1),model_type = 0):
 
     up9 = Conv2D(64, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv8))
 
-    if model_type==0:
-        merge9 = concatenate([conv1,up9], axis = 3)
-    else:
+    merge9 = concatenate([conv1,up9], axis = 3)
+    
+    if model_type!=0:
         merge9 = concatenate([up9,x03],axis = 3)
     
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge9)
